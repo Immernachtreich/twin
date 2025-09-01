@@ -7,7 +7,7 @@ use ratatui::{
     Terminal,
 };
 
-use crate::app::screens::{ MainScreen, Screen };
+use crate::app::{ cli::config::Config, screens::{ MainScreen, Screen } };
 
 #[derive(Eq, PartialEq, Clone, Copy, Hash, Debug)]
 pub enum ScreenCode {
@@ -15,18 +15,20 @@ pub enum ScreenCode {
 }
 
 pub struct App {
+    pub config: Config,
     pub screens: HashMap<ScreenCode, Box<dyn Screen>>,
     pub current_screen: ScreenCode,
     pub should_exit: bool,
 }
 
 impl App {
-    pub fn new() -> App {
+    pub fn new(config: Config) -> App {
         let mut screens: HashMap<ScreenCode, Box<dyn Screen>> = HashMap::with_capacity(1);
 
         screens.insert(ScreenCode::Main, Box::new(MainScreen::default()));
 
         App {
+            config,
             current_screen: ScreenCode::Main,
             screens,
             should_exit: false,
