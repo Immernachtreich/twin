@@ -25,7 +25,7 @@ impl App {
     pub fn new(config: Config) -> App {
         let mut screens: HashMap<ScreenCode, Box<dyn Screen>> = HashMap::with_capacity(1);
 
-        screens.insert(ScreenCode::Main, Box::new(MainScreen::default()));
+        screens.insert(ScreenCode::Main, Box::new(MainScreen::new(&config.storage_path)));
 
         App {
             config,
@@ -40,12 +40,7 @@ impl App {
             terminal.draw(|frame: &mut Frame| self.draw(frame))?;
 
             if let Event::Key(key) = event::read()? {
-                // Skip events that are not press events
-                if key.kind != KeyEventKind::Press {
-                    continue;
-                }
-
-                if key.code == KeyCode::Esc {
+                if key.kind == KeyEventKind::Press && key.code == KeyCode::Esc {
                     break Ok(());
                 }
 
@@ -54,7 +49,7 @@ impl App {
                     let old_key = self.current_screen.clone();
 
                     // Now we can hand &mut self to the screen safely
-                    current_screen.handle_key_event(self, key.code);
+                    current_screen.handle_key_event(self, key);
 
                     // Put the screen back
                     self.screens.insert(old_key, current_screen);
