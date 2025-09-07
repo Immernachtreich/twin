@@ -1,4 +1,4 @@
-use std::{ collections::HashMap, io::Result };
+use std::{ collections::HashMap, io::Result, path::PathBuf };
 
 use ratatui::{
     crossterm::{ event::{ self, Event, KeyCode, KeyEventKind } },
@@ -7,11 +7,12 @@ use ratatui::{
     Terminal,
 };
 
-use crate::app::{ cli::config::Config, screens::{ MainScreen, Screen } };
+use crate::app::{ cli::config::Config, screens::{ EditorScreen, MainScreen, Screen } };
 
 #[derive(Eq, PartialEq, Clone, Copy, Hash, Debug)]
 pub enum ScreenCode {
     Main,
+    Editor,
 }
 
 pub struct App {
@@ -19,20 +20,27 @@ pub struct App {
     pub screens: HashMap<ScreenCode, Box<dyn Screen>>,
     pub current_screen: ScreenCode,
     pub should_exit: bool,
+    pub selected_file: Option<PathBuf>,
 }
 
 impl App {
     pub fn new(config: Config) -> App {
-        let mut screens: HashMap<ScreenCode, Box<dyn Screen>> = HashMap::with_capacity(1);
+        let mut screens: HashMap<ScreenCode, Box<dyn Screen>> = HashMap::with_capacity(2);
 
         screens.insert(ScreenCode::Main, Box::new(MainScreen::new(&config.storage_path)));
+        screens.insert(ScreenCode::Editor, Box::new(EditorScreen::new()));
 
         App {
             config,
             current_screen: ScreenCode::Main,
             screens,
             should_exit: false,
+            selected_file: None,
         }
+    }
+
+    pub fn switch_screen(&mut self, screen: ScreenCode) -> () {
+        self.current_screen = screen;
     }
 
     pub fn run_app<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> Result<()> {

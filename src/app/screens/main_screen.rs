@@ -8,7 +8,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{ screens::Screen, App };
+use crate::app::{ app::ScreenCode, screens::Screen, App };
 
 const SELECTED_STYLE: Style = Style::new().bg(SLATE.c800).add_modifier(Modifier::BOLD);
 
@@ -77,7 +77,7 @@ impl Screen for MainScreen {
         frame.render_stateful_widget(list, frame.area(), &mut self.list_state);
     }
 
-    fn handle_key_event(&mut self, _app: &mut App, key_event: KeyEvent) -> () {
+    fn handle_key_event(&mut self, app: &mut App, key_event: KeyEvent) -> () {
         if key_event.kind != KeyEventKind::Press {
             return;
         }
@@ -85,6 +85,19 @@ impl Screen for MainScreen {
         match key_event.code {
             KeyCode::Up => self.list_state.select_previous(),
             KeyCode::Down => self.list_state.select_next(),
+            KeyCode::Enter => {
+                let selected_index = self.list_state.selected();
+
+                if selected_index.is_none() {
+                    return;
+                }
+
+                app.selected_file = self.dir_entries
+                    .get(selected_index.unwrap())
+                    .and_then(|entry| Some(entry.path()));
+
+                app.switch_screen(ScreenCode::Editor);
+            }
             _ => (),
         }
     }
