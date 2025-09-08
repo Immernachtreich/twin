@@ -16,7 +16,6 @@ pub enum ScreenCode {
 }
 
 pub struct App {
-    pub config: Config,
     pub screens: HashMap<ScreenCode, Box<dyn Screen>>,
     pub current_screen: ScreenCode,
     pub should_exit: bool,
@@ -31,7 +30,6 @@ impl App {
         screens.insert(ScreenCode::Editor, Box::new(EditorScreen::new()));
 
         App {
-            config,
             current_screen: ScreenCode::Main,
             screens,
             should_exit: false,
@@ -40,6 +38,13 @@ impl App {
     }
 
     pub fn switch_screen(&mut self, screen: ScreenCode) -> () {
+        if screen == ScreenCode::Editor {
+            let file_path = self.selected_file.clone().unwrap_or(PathBuf::from("."));
+            let editor_screen = EditorScreen::from_file(&file_path).unwrap_or(EditorScreen::new());
+
+            self.screens.insert(ScreenCode::Editor, Box::new(editor_screen));
+        }
+
         self.current_screen = screen;
     }
 
