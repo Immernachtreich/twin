@@ -2,13 +2,14 @@ use std::{ fs::{ self, DirEntry }, io::{ self }, path::PathBuf };
 
 use ratatui::{
     crossterm::event::{ KeyCode, KeyEvent, KeyEventKind },
-    layout::Alignment,
-    style::{ palette::tailwind::SLATE, Modifier, Style, Stylize },
+    layout::{ Alignment, Constraint },
+    style::{ palette::tailwind::SLATE, Color, Modifier, Style, Stylize },
+    text::Line,
     widgets::{ block::Title, Block, HighlightSpacing, List, ListItem, ListState },
     Frame,
 };
 
-use crate::app::{ app::ScreenCode, screens::Screen, App };
+use crate::app::{ app::ScreenCode, screens::Screen, util::ui, App };
 
 const SELECTED_STYLE: Style = Style::new().bg(SLATE.c800).add_modifier(Modifier::BOLD);
 
@@ -31,40 +32,30 @@ impl MainScreen {
 
 impl Screen for MainScreen {
     fn ui(&mut self, _app: &App, frame: &mut Frame) -> () {
-        let title: Title = Title::from(self.pwd.to_str().unwrap());
+        let folder_name = self.pwd
+            .file_name()
+            .and_then(|s| Some(s.to_string_lossy().to_string()))
+            .unwrap_or(String::from(""));
+
+        // let title: Title = Title::from(folder_name);
 
         let block: Block = Block::bordered()
             .style(Style::default())
-            .title(title)
-            .title_alignment(Alignment::Center)
-            .title_style(Style::default().bold());
+            .title_top(Line::from(folder_name).left_aligned())
+            .title_top(
+                Line::from("TWIN").style(Style::default().fg(Color::Blue)).bold().centered()
+            );
 
         let file_list: Vec<ListItem> = self.dir_entries
             .iter()
-            .filter(|entry| {
-                let is_folder: bool = !entry.file_type().unwrap().is_file();
-
-                if is_folder {
-                    return true;
-                }
-
-                let path = entry.path();
-                let extention = path.extension().and_then(|ext| ext.to_str());
-
-                match extention {
-                    None => false,
-                    Some(ext) => ext == "txt",
-                }
-            })
-            .map(|entry| {
-                let file_name: String = entry
+            .filter(|entry: &&DirEntry| {
+                entry
                     .path()
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("")
-                    .to_string();
-
-                ListItem::from(file_name)
+                    .extension()
+                    .map_or(false, |ext| ext == "txt")
+            })
+            .map(|entry: &DirEntry| {
+                ListItem::new(entry.file_name().to_string_lossy().to_string())
             })
             .collect();
 
@@ -74,7 +65,13 @@ impl Screen for MainScreen {
             .highlight_symbol("> ")
             .highlight_spacing(HighlightSpacing::Always);
 
-        frame.render_stateful_widget(list, frame.area(), &mut self.list_state);
+        let centered_rect = ui::center(
+            frame.area(),
+            Constraint::Percentage(60),
+            Constraint::Percentage(60)
+        );
+
+        frame.render_stateful_widget(list, centered_rect, &mut self.list_state);
     }
 
     fn handle_key_event(&mut self, app: &mut App, key_event: KeyEvent) -> () {
