@@ -2,14 +2,14 @@ use std::{ fs::{ self, DirEntry }, io::{ self }, path::PathBuf };
 
 use ratatui::{
     crossterm::event::{ KeyCode, KeyEvent, KeyEventKind },
-    layout::{ Alignment, Constraint },
+    layout::Constraint,
     style::{ palette::tailwind::SLATE, Color, Modifier, Style, Stylize },
     text::Line,
-    widgets::{ block::Title, Block, HighlightSpacing, List, ListItem, ListState },
+    widgets::{ Block, HighlightSpacing, List, ListItem, ListState, Padding },
     Frame,
 };
 
-use crate::app::{ app::ScreenCode, screens::Screen, util::ui, App };
+use crate::app::{ app::ScreenCode, screens::Screen, util::ui::{ self, marginized_title }, App };
 
 const SELECTED_STYLE: Style = Style::new().bg(SLATE.c800).add_modifier(Modifier::BOLD);
 
@@ -35,16 +35,25 @@ impl Screen for MainScreen {
         let folder_name = self.pwd
             .file_name()
             .and_then(|s| Some(s.to_string_lossy().to_string()))
-            .unwrap_or(String::from(""));
+            .unwrap_or(String::from(""))
+            .to_ascii_uppercase();
 
         // let title: Title = Title::from(folder_name);
 
         let block: Block = Block::bordered()
             .style(Style::default())
-            .title_top(Line::from(folder_name).left_aligned())
             .title_top(
-                Line::from("TWIN").style(Style::default().fg(Color::Blue)).bold().centered()
-            );
+                Line::from(
+                    marginized_title(
+                        &folder_name,
+                        5,
+                        ui::Direction::Left,
+                        Style::default().fg(Color::White).bg(Color::Blue)
+                    )
+                ).left_aligned()
+            )
+            .title_top(Line::from("TWIN").style(Style::default().fg(Color::Blue)).bold().centered())
+            .padding(Padding::top(1));
 
         let file_list: Vec<ListItem> = self.dir_entries
             .iter()
