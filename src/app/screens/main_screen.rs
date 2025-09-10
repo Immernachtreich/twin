@@ -1,11 +1,10 @@
-use std::{ fs::{ self, DirEntry }, io::{ self }, os::unix::fs::MetadataExt, path::PathBuf };
+use std::{ fs::{ self, DirEntry }, io::{ self }, path::PathBuf };
 
 use chrono::{ DateTime, Local };
 use ratatui::{
     crossterm::event::{ KeyCode, KeyEvent, KeyEventKind },
-    layout::Constraint,
-    style::{ palette::tailwind::SLATE, Color, Modifier, Style, Stylize },
-    text::Line,
+    layout::{ Constraint, Direction, Layout },
+    style::{ palette::tailwind::SLATE, Color, Modifier, Style },
     widgets::{ Block, HighlightSpacing, List, ListItem, ListState, Padding },
     Frame,
 };
@@ -33,6 +32,15 @@ impl MainScreen {
 
 impl Screen for MainScreen {
     fn ui(&mut self, _app: &App, frame: &mut Frame) -> () {
+        let layout = Layout::default()
+            .constraints([
+                Constraint::Percentage(10),
+                Constraint::Percentage(80),
+                Constraint::Percentage(10),
+            ])
+            .direction(Direction::Vertical)
+            .split(frame.area());
+
         let folder_name = self.pwd
             .file_name()
             .and_then(|s| Some(s.to_string_lossy().to_string()))
@@ -63,7 +71,7 @@ impl Screen for MainScreen {
             .map(|(index, entry)| {
                 let metadata = entry.metadata().unwrap();
 
-                let file_size = metadata.size();
+                let file_size = metadata.len();
                 let updated_at = metadata
                     .modified()
                     .and_then(|time| {
@@ -95,13 +103,7 @@ impl Screen for MainScreen {
             .highlight_symbol("> ")
             .highlight_spacing(HighlightSpacing::Always);
 
-        let centered_rect = ui::center(
-            frame.area(),
-            Constraint::Percentage(60),
-            Constraint::Percentage(60)
-        );
-
-        frame.render_stateful_widget(list, centered_rect, &mut self.list_state);
+        frame.render_stateful_widget(list, frame.area(), &mut self.list_state);
     }
 
     fn handle_key_event(&mut self, app: &mut App, key_event: KeyEvent) -> () {
